@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    ç
+    <meta charset="UTF-8">
+    <title>长链接转换</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <style type="text/css">
+        .form {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        @media screen and (min-width: 500px) {
+            .form {
+                padding-top: 100px;
+            }
+        }
+
+        .title {
+            line-height: 40px;
+            margin: 0 20px;
+        }
+
+        .input-box {
+            display: block;
+            margin: 20px;
+            margin-top: 0;
+        }
+
+        .input {
+            display: block;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            width: 100%;
+            outline: none;
+            border: 1px solid #ccc;
+            line-height: 40px;
+            height: 40px;
+            padding: 0 10px;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .input:focus {
+            box-shadow: 0 0 3px aquamarine inset;
+        }
+
+        .row {
+            margin: 0 20px;
+            margin-bottom: 20px;
+        }
+
+        .radio {
+            display: inline-block;
+            vertical-align: top;
+            font-size: 0;
+            border: 1px solid #ccc;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+        }
+
+        .radio-item {
+            display: inline-block;
+            vertical-align: top;
+            height: 40px;
+            line-height: 40px;
+            border-right: 1px solid #ccc;
+            padding: 0 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .radio-item:last-child {
+            border-right: none;
+        }
+
+        .radio-item-active {
+            background: #337ab7;
+            color: #fff;
+        }
+
+        .btn {
+            margin: 20px;
+            line-height: 40px;
+            border: 1px solid #ccc;
+            text-align: center;
+            font-size: 20px;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+        }
+
+        .btn:hover {
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+<form class="form">
+    <div class="title">请输入长链接:</div>
+    <div class="input-box">
+        <input class="input" value=""/>
+    </div>
+    <div class="title">选择域名:</div>
+    <div class="row">
+        <div class="radio">
+            <div class="radio-item radio-item-active">cy96151.cn</div>
+        </div>
+    </div>
+    <div class="btn">转换</div>
+    <div class="title">短链接:</div>
+    <div class="input-box" id="short_url">
+        --
+    </div>
+</form>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    document.querySelector(".radio").addEventListener("click", function (e) {
+        if (e.target.className.indexOf(".radio-item")) {
+            document.querySelector(".radio-item-active").className = "radio-item"
+            e.target.className = "radio-item radio-item-active"
+        }
+    })
+    document.querySelector(".btn").addEventListener("click", function () {
+        var url = document.querySelector(".input").value;
+        var domain = document.querySelector(".radio-item-active").innerHTML;
+        if (!url) {
+            alert("请输入长链接")
+            return
+        }
+        $.post("short_url/get", {domainAddress: domain, longUrl: url}, function (res) {
+            if (res.code == 0) {
+                document.querySelector("#short_url").innerHTML = "https://" + domain + "/" + res.shortUrl;
+            } else {
+                alert(res.error)
+            }
+        }
+        , "json");
+    })
+</script>
+</body>
+</html>
