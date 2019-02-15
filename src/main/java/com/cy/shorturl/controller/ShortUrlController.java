@@ -5,6 +5,7 @@ import com.cy.shorturl.entity.UrlInfo;
 import com.cy.shorturl.mapper.UrlInfoMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 短链接转换控制层
@@ -24,6 +26,9 @@ public class ShortUrlController {
 
     @Autowired
     private UrlInfoMapper urlInfoMapper;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 获取短链接
@@ -40,21 +45,26 @@ public class ShortUrlController {
             longUrl = ShortUrlContant.URL_HEAD_HTTP + longUrl;
         }
 
-        // LRU
+        // cache
+        String url = stringRedisTemplate.opsForValue().get(longUrl);
+        if (StringUtils.isBlank(url)) {
+            // 插入表
+            UrlInfo urlInfo = new UrlInfo(longUrl);
+            urlInfoMapper.insert(urlInfo);
 
+            // 编码转换
+            StringBuilder shortUrl = new StringBuilder();
+            recursionEncode(shortUrl, urlInfo.getId());
 
-        // 插入表
-        UrlInfo urlInfo = new UrlInfo(longUrl);
-        urlInfoMapper.insert(urlInfo);
+            url = shortUrl.toString();
+            stringRedisTemplate.opsForValue().set(longUrl, url);
+        }
 
-        // 编码转换
-        StringBuilder shortUrl = new StringBuilder();
-        recursionEncode(shortUrl, urlInfo.getId());
-
+        stringRedisTemplate.expire(longUrl, 5, TimeUnit.MINUTES);
         // 返回结果
         Map result = new HashMap(2);
         result.put("code", 0);
-        result.put("shortUrl", shortUrl.toString());
+        result.put("shortUrl", url);
         return result;
     }
 
@@ -72,4 +82,6 @@ public class ShortUrlController {
         shortUrl.append(ShortUrlContant.charArray[(int) i % 62]);
         recursionEncode(shortUrl, i / 62);
     }
+
+
 }
